@@ -11,6 +11,7 @@ use Exporter qw(import);
 our @EXPORT = qw(ats_db);
 
 our $cargo = 0;
+our $positions = 1;
 our $tidy = 1;
 # set @def to the list of def directories to use
 # (if the list is empty, defaults will be used)
@@ -176,6 +177,30 @@ sub parse_sui_blocks {
 }
 
 
+sub read_pos {
+  my $ats_data = shift;
+  my $pos_dir = path(__FILE__)->absolute->parent->child('pos');
+  $pos_dir->is_dir or return;
+  my @files = grep { $_->basename =~ /\.txt$/ } $pos_dir->children;
+  my (@pos, %pos);
+  push @pos, split /\r?\n/, $_->slurp for @files;
+  for my $line (grep {$_} map {trim $_} @pos) {
+    $line =~ /^ *([^;]*) +;[^;]* \(sec([-+][0-9]+)([-+][0-9]+)\);([^;]*);([^;]*);([^;]*);([^;]*);([^;]*)$/
+      or next;
+    $pos{$1} = {
+      sx => $2, sy => $3,
+      cx => $4, cz => $5, cy => $6,
+      ca => $7, cb => $8,
+    };
+  }
+  for my $city (sort keys $ats_data->{city}->%*) {
+    $pos{$city} or next;
+    $ats_data->{city}{$city}{_east} = $pos{$city}{cx};
+    $ats_data->{city}{$city}{_north} = $pos{$city}{cy};
+  }
+}
+
+
 sub init_def {
   return if @def;
   
@@ -264,6 +289,8 @@ sub ats_db {
     } sort keys $company_data->{_company_def}->%*;
     push $ats_data->{company}{permanent}{$company}{company_def}->@*, @company_defs;
   }
+  
+  read_pos $ats_data if $positions;
   
   return $ats_data;
 }
