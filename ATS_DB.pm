@@ -177,6 +177,22 @@ sub parse_sui_blocks {
 }
 
 
+my $wiki_names;
+sub add_wiki_names {
+  my $ats_data = shift;
+  for my $city (sort keys $ats_data->{city}->%*) {
+    my $wiki_name = $wiki_names->{city}{$city};
+    $wiki_name //= $ats_data->{city}{$city}{city_name};
+    $ats_data->{city}{$city}{wiki_name} = $wiki_name;
+  }
+  for my $company (sort keys $ats_data->{company}{permanent}->%*) {
+    my $company_name = $ats_data->{company}{permanent}{$company}{name};
+    my $wiki_name = $wiki_names->{company}{$company_name} // $company_name;
+    $ats_data->{company}{permanent}{$company}{wiki_name} = $wiki_name;
+  }
+}
+
+
 sub read_pos {
   my $ats_data = shift;
   my $pos_dir = path(__FILE__)->absolute->parent->child('pos');
@@ -248,6 +264,7 @@ sub ats_db {
   push @lines, parse_sii $_ for @files;
   my $ats_data = {};
   parse_sui_blocks $ats_data, @lines;
+  add_wiki_names $ats_data;
   
   # read company in/out cargo data
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
@@ -294,6 +311,28 @@ sub ats_db {
   
   return $ats_data;
 }
+
+
+$wiki_names = {
+  city => {  # token => fandom page name
+    aberdeen_wa  => 'Aberdeen (Washington)',
+    burlington   => 'Burlington (Colorado)',
+    carlsbad     => 'Carlsbad (California)',
+    carlsbad_nm  => 'Carlsbad (New Mexico)',
+    vancouver    => 'Vancouver (Washington)',
+  },
+  company => {  # name => fandom page name
+    'Airport Denver' => 'Denver Air Cargo',
+    'Chemso Ltd.' => 'Chemso',
+    'Coastline mining' => 'Coastline Mining',
+    'Drake Cars' => 'Drake Car Dealer',
+    'Fish Tail Food' => 'Fish Tail Foods',
+    'SellGoods' => 'Sell Goods',
+    'US Beverages & Bottling' => 'USBB',
+    'Voltison' => 'Voltison Motors',
+    'Western Star' => 'Western Star Trucks',
+  },
+};
 
 
 1;
