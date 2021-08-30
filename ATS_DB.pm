@@ -193,7 +193,7 @@ sub add_wiki_names {
 }
 
 
-sub read_pos {
+sub ats_db_positions {
   my $ats_data = shift;
   my $pos_dir = path(__FILE__)->absolute->parent->child('pos');
   $pos_dir->is_dir or return;
@@ -257,7 +257,15 @@ sub ats_db_files {
 # (if the list is empty, defaults will be used)
 sub ats_db {
   init_def;
-  
+  my $ats_data = ats_db_base_data(@_);
+  ats_db_company_cargo($ats_data);
+  ats_db_company_city($ats_data);
+  ats_db_positions($ats_data) if $positions;
+  return $ats_data;
+}
+
+
+sub ats_db_base_data {
   # get base data for all cities and companies
   my @files = map {find_file $_} ats_db_files(@_);
   my @lines;
@@ -265,6 +273,12 @@ sub ats_db {
   my $ats_data = {};
   parse_sui_blocks $ats_data, @lines;
   add_wiki_names $ats_data;
+  return $ats_data;
+}
+
+
+sub ats_db_company_cargo {
+  my $ats_data = shift;
   
   # read company in/out cargo data
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
@@ -290,6 +304,11 @@ sub ats_db {
       $ats_data->{company}{permanent}{$company}{out_cargo} = \@out_cargo;
     }
   }
+}
+
+
+sub ats_db_company_city {
+  my $ats_data = shift;
   
   # relate city data and company data
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
@@ -306,10 +325,6 @@ sub ats_db {
     } sort keys $company_data->{_company_def}->%*;
     push $ats_data->{company}{permanent}{$company}{company_def}->@*, @company_defs;
   }
-  
-  read_pos $ats_data if $positions;
-  
-  return $ats_data;
 }
 
 
