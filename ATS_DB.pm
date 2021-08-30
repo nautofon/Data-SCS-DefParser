@@ -1,11 +1,13 @@
 use 5.034;
 use warnings;
 
-package ATS_DB v1.41.0;
+package ATS_DB v1.41.1;
 
 use Path::Tiny qw(path);
 use File::Find qw(find);
 use Feature::Compat::Try;
+use JSON::MaybeXS;
+use Gzip::Faster;
 use XXX;
 use Exporter qw(import);
 our @EXPORT = qw(ats_db);
@@ -107,12 +109,20 @@ sub parse_sui_data_value {
 sub parse_sui_data {
   my ($ats_data, $key, @raw) = @_;
   my $data = {};
+  # parse key and insert data
+  my ($type, $path) = $key =~ m/^(\S+)\s*:\s+(\S+)$/;
+  if ($tidy) {
+    # skip currently useless clutter
+    return if $type eq 'license_plate_data';
+  }
   # parse block contents
   for (@raw) {
     if ($tidy) {
       # skip currently useless clutter
       next if /city_name_localized/ || /sort_name/ || /trailer_look/ || /time_zone/;
       next if /map_._offsets/ || /license_plate/;
+      next if $type eq 'prefab_model' && (/model_desc/ || /semaphore_profile/ || /use_semaphores/ || /gps_avoid/ || /use_perlin/ || /detail_veg_max_distance/ || /traffic_rules_input/ || /traffic_rules_output/ || /invisible/ || /category/ || /tweak_detail_vegetation/);
+      next if $type eq 'prefab_model' && (/dynamic_lod_/ || /corner\d/);  # code dies for these; not sure why
     }
     if (/(\w+)\s*:\s*(.+)$/) {
       $data->{$1} = parse_sui_data_value $2;
@@ -124,6 +134,7 @@ sub parse_sui_data {
       }
       else {
         $data->{$1} //= [];
+        #die "$1 $2 $3" if $data->{$1} eq "1";
         push @{$data->{$1}}, parse_sui_data_value $3;
       }
       next;
@@ -132,13 +143,7 @@ sub parse_sui_data {
   }
   #$data->{_raw} = [@raw];
   #$data->{_key_raw} = $key;
-  # parse key and insert data
-  my ($type, $path) = $key =~ m/^(\S+)\s*:\s+(\S+)$/;
   #$data->{_type} = $type;
-  if ($tidy) {
-    # skip currently useless clutter
-    return if $type eq 'license_plate_data';
-  }
   if ($path =~ m/^[\.\w]+$/) {
     my $hashpath = $path =~ s/\./'}{'/gr;
     $hashpath =~ s/^\'}/_$type'}/;
@@ -173,6 +178,18 @@ sub parse_sui_blocks {
       push @raw, $lines[$i];
       next;
     }
+  }
+}
+
+
+sub prefab_json_cache {
+  my $ats_data = shift;
+  my $cache_file = path(__FILE__)->absolute->parent->child('prefab.json.gz');
+  if ($cache_file->is_file) {  # read cache
+    $ats_data->{prefab} = decode_json gunzip $cache_file->slurp;
+  }
+  elsif (! $cache_file->exists) {  # write cache
+    $cache_file->spew( gzip encode_json $ats_data->{prefab} );
   }
 }
 
@@ -243,6 +260,8 @@ sub ats_db_files {
       "city.$basename.sii",
       "company.$basename.sii",
 #      "map_data.sii",
+      "world/prefab.sii",
+      "world/prefab.baker.sii",
       $cargo ? "cargo.sii" : (),
     );
     for my $file (@filenames) {
@@ -260,6 +279,7 @@ sub ats_db {
   my $ats_data = ats_db_base_data(@_);
   ats_db_company_cargo($ats_data);
   ats_db_company_city($ats_data);
+  ats_db_company_filter($ats_data) if $tidy;
   ats_db_positions($ats_data) if $positions;
   return $ats_data;
 }
@@ -325,6 +345,22 @@ sub ats_db_company_city {
     } sort keys $company_data->{_company_def}->%*;
     push $ats_data->{company}{permanent}{$company}{company_def}->@*, @company_defs;
   }
+}
+
+
+sub ats_db_company_filter {
+  my $ats_data = shift;
+  
+  # remove prefab data, except for that of company depots
+  my %prefabs;
+  for my $company (sort keys $ats_data->{company}{permanent}->%*) {
+    $prefabs{$_->{prefab}}++ for $ats_data->{company}{permanent}{$company}{company_def}->@*;
+  }
+  $ats_data->{prefab}{$_}{_count} = $prefabs{$_} for sort keys %prefabs;
+  for my $prefab (sort keys $ats_data->{prefab}->%*) {
+    delete $ats_data->{prefab}{$prefab} unless $prefabs{$prefab};
+  }
+  prefab_json_cache $ats_data;
 }
 
 
