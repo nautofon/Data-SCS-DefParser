@@ -351,6 +351,9 @@ sub ats_db_company_city {
 sub ats_db_company_filter {
   my $ats_data = shift;
   
+  # fix data errors (leftovers from earlier versions etc.)
+  delete $ats_data->{company}{permanent}{mcs_con_sit};  # Mud Creek slide
+  
   # remove prefab data, except for that of company depots
   my %prefabs;
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
@@ -370,6 +373,7 @@ $wiki_names = {
     burlington   => 'Burlington (Colorado)',
     carlsbad     => 'Carlsbad (California)',
     carlsbad_nm  => 'Carlsbad (New Mexico)',
+    ontario      => 'Ontario (Oregon)',
     vancouver    => 'Vancouver (Washington)',
   },
   company => {  # name => fandom page name
@@ -378,6 +382,8 @@ $wiki_names = {
     'Coastline mining' => 'Coastline Mining',
     'Drake Cars' => 'Drake Car Dealer',
     'Fish Tail Food' => 'Fish Tail Foods',
+    'Mud Creek slide' => 'Mud Creek Slide',
+    'Port of SF' => 'Port of San Francisco',
     'SellGoods' => 'Sell Goods',
     'US Beverages & Bottling' => 'USBB',
     'Voltison' => 'Voltison Motors',
