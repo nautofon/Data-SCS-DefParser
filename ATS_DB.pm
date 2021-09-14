@@ -1,7 +1,7 @@
 use 5.034;
 use warnings;
 
-package ATS_DB v1.41.1;
+package ATS_DB v1.41.4;
 
 use Path::Tiny qw(path);
 use File::Find qw(find);
@@ -382,6 +382,7 @@ $wiki_names = {
     'Coastline mining' => 'Coastline Mining',
     'Drake Cars' => 'Drake Car Dealer',
     'Fish Tail Food' => 'Fish Tail Foods',
+    'Johnson and Smith‎' => 'Johnson & Smith‎',
     'Mud Creek slide' => 'Mud Creek Slide',
     'Port of SF' => 'Port of San Francisco',
     'SellGoods' => 'Sell Goods',
