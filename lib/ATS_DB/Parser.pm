@@ -1,7 +1,6 @@
-use 5.034;
-use warnings;
+use v5.36;
 
-package ATS_DB v1.41.4;
+package ATS_DB::Parser;
 
 use Path::Tiny qw(path);
 use File::Find qw(find);
@@ -20,7 +19,7 @@ our $tidy = 1;
 our @def;
 
 
-sub trim ($) {
+sub trim :prototype($) {
   my $str = shift;
   $str =~ s/^\s+//s;
   $str =~ s/\s+$//s;
@@ -184,7 +183,7 @@ sub parse_sui_blocks {
 
 sub prefab_json_cache {
   my $ats_data = shift;
-  my $cache_file = path(__FILE__)->absolute->parent->child('prefab.json.gz');
+  my $cache_file = path(__FILE__)->absolute->parent->parent->parent->child('data')->child('cache')->child('prefab.json.gz');
   if ($cache_file->is_file) {  # read cache
     $ats_data->{prefab} = decode_json gunzip $cache_file->slurp;
   }
@@ -212,7 +211,7 @@ sub add_wiki_names {
 
 sub ats_db_positions {
   my $ats_data = shift;
-  my $pos_dir = path(__FILE__)->absolute->parent->child('pos');
+  my $pos_dir = path(__FILE__)->absolute->parent->parent->parent->child('pos');
   $pos_dir->is_dir or return;
   my @files = grep { $_->basename =~ /\.txt$/ } $pos_dir->children;
   my (@pos, %pos);
@@ -237,7 +236,7 @@ sub ats_db_positions {
 sub init_def {
   return if @def;
   
-  my @siblings = path(__FILE__)->absolute->parent->children;
+  my @siblings = path(__FILE__)->absolute->parent->parent->parent->child('sii')->children;
   @def = sort map { "$_" } (
     (grep { $_->is_dir && $_->basename eq 'def' } @siblings),
     (grep { $_->is_dir } map { $_->child('def') } @siblings),
