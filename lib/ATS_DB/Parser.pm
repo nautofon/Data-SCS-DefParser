@@ -366,27 +366,34 @@ sub ats_db_company_filter {
 }
 
 
+# Legacy wiki_name adjustments
 $wiki_names = {
   city => {  # token => fandom page name
     aberdeen_wa  => 'Aberdeen (Washington)',
     burlington   => 'Burlington (Colorado)',
     carlsbad     => 'Carlsbad (California)',
     carlsbad_nm  => 'Carlsbad (New Mexico)',
+    glasgow_mt   => 'Glasgow (Montana)',
     ontario      => 'Ontario (Oregon)',
     vancouver    => 'Vancouver (Washington)',
   },
   company => {  # name => fandom page name
+    '18 Wheels' => '18 Wheels Garage',
     'Airport Denver' => 'Denver Air Cargo',
     'Chemso Ltd.' => 'Chemso',
     'Coastline mining' => 'Coastline Mining',
     'Drake Cars' => 'Drake Car Dealer',
+    'Faraday' => 'Faraday Energy',
     'Fish Tail Food' => 'Fish Tail Foods',
+    'GF Cargo' => 'Great Falls Cargo Terminal',
     'Johnson and Smith‎' => 'Johnson & Smith‎',
     'Mud Creek slide' => 'Mud Creek Slide',
     'Port of SF' => 'Port of San Francisco',
     'SellGoods' => 'Sell Goods',
+    'Sweetbeets' => 'Sweet Beets',
     'US Beverages & Bottling' => 'USBB',
     'Voltison' => 'Voltison Motors',
+    'Waldens' => "Walden's",
     'Western Star' => 'Western Star Trucks',
   },
 };
