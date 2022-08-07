@@ -183,7 +183,9 @@ sub parse_sui_blocks {
 
 sub prefab_json_cache {
   my $ats_data = shift;
-  my $cache_file = path(__FILE__)->absolute->parent->parent->parent->child('data')->child('cache')->child('prefab.json.gz');
+  my $cache_dir = path(__FILE__)->absolute->parent->parent->parent->child('data')->child('cache');
+  $cache_dir->mkpath;
+  my $cache_file = $cache_dir->child('prefab.json.gz');
   if ($cache_file->is_file) {  # read cache
     $ats_data->{prefab} = decode_json gunzip $cache_file->slurp;
   }
@@ -261,6 +263,7 @@ sub ats_db_files {
 #      "map_data.sii",
       "world/prefab.sii",
       "world/prefab.baker.sii",
+      "world/prefab.$basename.sii",
       $cargo ? "cargo.sii" : (),
     );
     for my $file (@filenames) {
