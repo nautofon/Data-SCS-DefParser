@@ -386,7 +386,6 @@ $wiki_names = {
     'Chemso Ltd.' => 'Chemso',
     'Coastline mining' => 'Coastline Mining',
     'Drake Cars' => 'Drake Car Dealer',
-    'Faraday' => 'Faraday Energy',
     'Fish Tail Food' => 'Fish Tail Foods',
     'GF Cargo' => 'Great Falls Cargo Terminal',
     'Johnson and Smith‎' => 'Johnson & Smith‎',
