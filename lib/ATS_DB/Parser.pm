@@ -373,14 +373,11 @@ sub ats_db_company_filter {
 $wiki_names = {
   city => {  # token => fandom page name
     aberdeen_wa  => 'Aberdeen (Washington)',
-    burlington   => 'Burlington (Colorado)',
     carlsbad     => 'Carlsbad (California)',
     carlsbad_nm  => 'Carlsbad (New Mexico)',
     glasgow_mt   => 'Glasgow (Montana)',
     longview_tx  => 'Longview (Texas)',
     longview     => 'Longview (Washington)',
-    ontario      => 'Ontario (Oregon)',
-    vancouver    => 'Vancouver (Washington)',
   },
   company => {  # name => fandom page name
     '18 Wheels' => '18 Wheels Garage',
@@ -394,14 +391,16 @@ $wiki_names = {
     'Fish Tail Food' => 'Fish Tail Foods',
     'GARC' => 'GARC Railroads',
     'GF Cargo' => 'Great Falls Cargo Terminal',
-    'Intercontinental Airport Houston' => 'Houston Intercontinental Airport',
+    'Intercontinental Airport Houston' => 'Houston Intercontinental Airport',  # 1.46 only
+    'Houston Intercont. Airport' => 'Houston Intercontinental Airport',
     'Johnson and Smith‎' => 'Johnson & Smith‎',
     'Lonestar Forwarding' => 'Lone Star Forwarding',
     'Mud Creek slide' => 'Mud Creek Slide',
     'Port of SF' => 'Port of San Francisco',
     'SellGoods' => 'Sell Goods',
     'Sweetbeets' => 'Sweet Beets',
-    'Space Center' => 'Space Park Houston',
+    'Space Center' => 'Space Park Houston',  # 1.46 only
+    'Space Park' => 'Space Park Houston',
     'Taylor Construction Group' => 'Taylor',
     'Tera' => 'TERA',
     'US Beverages & Bottling' => 'USBB',
