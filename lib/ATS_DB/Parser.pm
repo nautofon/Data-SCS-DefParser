@@ -33,7 +33,8 @@ sub find_file {
     my $path = path("$def/$file")->absolute;
     return "$path" if $path->is_file;
   }
-  die "Couldn't find file '$file' in: @def";
+  warn "Couldn't find file '$file' in: @def";
+  return;
 }
 
 
@@ -56,8 +57,9 @@ sub parse_block {
 
 
 sub include_file {
-  my $file = shift;
-  my $inc = path(find_file $file)->slurp;
+  my $file = find_file shift;
+  return unless $file;
+  my $inc = path($file)->slurp_utf8;
   my @inc = grep {$_} map {trim $_} split m/\n/, $inc;
   return @inc;
 }
@@ -65,7 +67,7 @@ sub include_file {
 
 sub parse_sii {
   my $file = shift;
-  my ($magic, $unit) = parse_block path($file)->slurp;
+  my ($magic, $unit) = parse_block path($file)->slurp_utf8;
   die "Expected SiiNunit, found '$magic'" unless $magic eq 'SiiNunit';
   my @input = grep {$_} map {trim $_} split m/\n/, $unit;
   my @lines;
@@ -119,6 +121,7 @@ sub parse_sui_data {
     if ($tidy) {
       # skip currently useless clutter
       next if /city_name_localized/ || /sort_name/ || /trailer_look/ || /time_zone/;
+      next if /city_pin_scale_factor/;
       next if /map_._offsets/ || /license_plate/;
       next if $type eq 'prefab_model' && (/model_desc/ || /semaphore_profile/ || /use_semaphores/ || /gps_avoid/ || /use_perlin/ || /detail_veg_max_distance/ || /traffic_rules_input/ || /traffic_rules_output/ || /invisible/ || /category/ || /tweak_detail_vegetation/);
       next if $type eq 'prefab_model' && (/dynamic_lod_/ || /corner\d/);  # code dies for these; not sure why
@@ -128,12 +131,12 @@ sub parse_sui_data {
       next;
     }
     if (/(\w+)\[(\d*)\]\s*:\s*(.+)$/) {
-      if ($2) {
+      # init array, overwriting scalar array size if present
+      $data->{$1} = [] unless ref $data->{$1};
+      if (length $2) {
         $data->{$1}[0+$2] = parse_sui_data_value $3;
       }
       else {
-        $data->{$1} //= [];
-        #die "$1 $2 $3" if $data->{$1} eq "1";
         push @{$data->{$1}}, parse_sui_data_value $3;
       }
       next;
@@ -171,6 +174,10 @@ sub parse_sui_blocks {
       parse_sui_data $ats_data, $key, @raw;
       $key = undef;
       $block--;
+      next;
+    }
+    if ($block && $lines[$i] !~ m/"/ && $lines[$i] =~ m/:/) {  # parse Reforma one-liners
+      push @raw, split m/(?<=[a-z])\s+/, $lines[$i];
       next;
     }
     if ($block) {
@@ -258,9 +265,11 @@ sub ats_db_files {
       "country.sii",
       "city.sii",
       "company.sii",
+      "country.$basename.sii",
       "city.$basename.sii",
       "company.$basename.sii",
 #      "map_data.sii",
+#      "sign/mileage_targets.sii",
       "world/prefab.sii",
       "world/prefab.baker.sii",
       "world/prefab.$basename.sii",
@@ -289,7 +298,7 @@ sub ats_db {
 
 sub ats_db_base_data {
   # get base data for all cities and companies
-  my @files = map {find_file $_} ats_db_files(@_);
+  my @files = grep {defined} map {find_file $_} ats_db_files(@_);
   my @lines;
   push @lines, parse_sii $_ for @files;
   my $ats_data = {};
