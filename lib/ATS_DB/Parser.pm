@@ -378,6 +378,8 @@ $wiki_names = {
     glasgow_mt   => 'Glasgow (Montana)',
     longview_tx  => 'Longview (Texas)',
     longview     => 'Longview (Washington)',
+    pajarito     => 'Santa Rosa',
+    pedro        => 'Deming',
   },
   company => {  # name => fandom page name
     '18 Wheels' => '18 Wheels Garage',
