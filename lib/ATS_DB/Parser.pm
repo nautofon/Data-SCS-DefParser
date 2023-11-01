@@ -389,6 +389,7 @@ $wiki_names = {
     longview     => 'Longview (Washington)',
     pajarito     => 'Santa Rosa',
     pedro        => 'Deming',
+    salina_ks    => 'Salina (Kansas)',
   },
   company => {  # name => fandom page name
     '18 Wheels' => '18 Wheels Garage',
