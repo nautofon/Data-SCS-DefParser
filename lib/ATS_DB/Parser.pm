@@ -120,7 +120,7 @@ sub parse_sui_data {
   for (@raw) {
     if ($tidy) {
       # skip currently useless clutter
-      next if /city_name_localized/ || /sort_name/ || /trailer_look/ || /time_zone/;
+      next if /city_name_localized/ || /sort_name/ || /time_zone/;
       next if /city_pin_scale_factor/;
       next if /map_._offsets/ || /license_plate/;
       next if $type eq 'prefab_model' && (/model_desc/ || /semaphore_profile/ || /use_semaphores/ || /gps_avoid/ || /use_perlin/ || /detail_veg_max_distance/ || /traffic_rules_input/ || /traffic_rules_output/ || /invisible/ || /category/ || /tweak_detail_vegetation/);
