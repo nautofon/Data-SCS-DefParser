@@ -389,6 +389,8 @@ $wiki_names = {
     longview     => 'Longview (Washington)',
     pajarito     => 'Santa Rosa',
     pedro        => 'Deming',
+    sidney       => 'Sidney (Montana)',
+    sidney_ne    => 'Sidney (Nebraska)',
     salina_ks    => 'Salina (Kansas)',
   },
   company => {  # name => fandom page name
