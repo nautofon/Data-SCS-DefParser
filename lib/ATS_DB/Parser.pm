@@ -3,6 +3,7 @@ use v5.36;
 package ATS_DB::Parser;
 
 use Archive::SCS 1.06;
+use Archive::SCS::GameDir;
 use Path::Tiny qw(path);
 use Feature::Compat::Try;
 use JSON::MaybeXS;
@@ -254,11 +255,22 @@ sub ats_db_positions {
 sub init_def {
   return if @def;
 
-  my @siblings = path($source)->children;
-  @def = sort map { $_->parent->stringify } (
-    (grep { $_->is_dir && $_->basename eq 'def' } @siblings),
-    (grep { $_->is_dir } map { $_->child('def') } @siblings),
-  );
+  my $is_path = $source isa Path::Tiny || $source =~ m|/|;
+  if ( $is_path && path($source)->realpath->is_dir ) {
+    @def = sort map { "$_" } path( $source )->children( qr/^def|^dlc_/ );
+
+    # ATS_DB originally expected def.scs to be extracted directly into the
+    # source dir. In this legacy case, the source dir must be mounted first.
+    my $def_dir = "$source/def";
+    if ( path($def_dir)->is_dir && ! path($def_dir)->child('def')->is_dir ) {
+      @def = ( $source, grep { $_ ne $def_dir } @def );
+    }
+  }
+  else {  # $source is abstract, e.g. 'ATS'
+    my $gamedir = Archive::SCS::GameDir->new(game => $source);
+    @def = grep { /^def|^dlc_/ } $gamedir->archives;
+    @def = map { $gamedir->path->child($_)->stringify } @def;
+  }
 }
 
 
@@ -268,7 +280,7 @@ sub ats_db_files {
   my @files = grep $archive_has_entry{$_}, @filenames;
   for my $def (@def) {
     # Include files from DLCs, with file names containing the DLC archive name.
-    my $dlc_name = path($def)->basename;
+    my $dlc_name = path($def)->basename =~ s/\.scs$//r;
     push @files, grep $archive_has_entry{$_}, map { s/\.sii$/.$dlc_name.sii/r } @filenames;
   }
   return sort @files;
@@ -280,7 +292,7 @@ sub ats_db_files {
 sub ats_db {
   init_def;
   my $ats_data = ats_db_base_data(@_);
-  ats_db_company_cargo($ats_data);
+  ats_db_company_cargo($ats_data) if $cargo;
   ats_db_company_city($ats_data);
   ats_db_company_filter($ats_data) if $tidy;
   ats_db_positions($ats_data) if $positions;
