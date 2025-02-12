@@ -279,6 +279,20 @@ method init_def ($source) {
   else {  # $source is abstract, e.g. 'ATS'
     my $gamedir = Archive::SCS::GameDir->new(game => $source);
     @def = grep { /^def|^dlc_/ } $gamedir->archives;
+
+    if ( $gamedir->game =~ m/^A/i ) {
+      # The DLC file names for ATS are well-known; limiting the mounts
+      # to just the needed ones saves a bunch of time.
+      @def = sort +(
+        'dlc_kenworth_t680.scs',
+        'dlc_peterbilt_579.scs',
+        'dlc_westernstar_49x.scs',
+        'dlc_arizona.scs',
+        'dlc_nevada.scs',
+        grep { /^def|^dlc_[a-z]{2}\.scs$/ } @def,
+      );
+    }
+
     @def = map { $gamedir->path->child($_)->stringify } @def;
   }
 }
