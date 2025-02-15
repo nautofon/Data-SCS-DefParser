@@ -82,9 +82,10 @@ method include_file ($file) {
 
 
 method parse_sii ($file) {
-  my ($magic, $unit) = parse_block $archive->read_entry($file);
-  utf8::decode($unit);
-  die "Expected SiiNunit, found '$magic'" unless $magic eq 'SiiNunit';
+  utf8::decode my $sii = $archive->read_entry($file);
+  my ($magic, $unit) = parse_block $sii;
+  $magic =~ m/^ \N{ BYTE ORDER MARK }? SiiNunit $/x or die
+    sprintf "Expected SiiNunit, found '%s' in %s", $magic, $file;
   my @input = grep {$_} map {trim $_} split m/\n/, $unit;
   my @lines;
   while (my $line = shift @input) {
@@ -115,10 +116,21 @@ method parse_sii ($file) {
 
 sub parse_sui_data_value {
   my $value = shift;
-  if ( $value =~ m/^"([^"]+)"$/
-      || $value =~ m/^(\([^\)]+\))$/
-      || $value =~ m/^(\S+)$/ ) {
-    return "$1";
+  if ( $value =~ m/^&([0-9A-Fa-f]{8})$/ ) {  # IEEE 754 binary32 float
+    return 'Inf' if lc $1 eq '7f7fffff';  # max finite value / no data marker
+    return sprintf '%.9g', unpack 'f', pack 'h8', scalar reverse $1;
+    # 9 significant digits are sufficient to represent any 32-bit float.
+  }
+  if ( $value =~ m/^\(([^()]+)\)$/ ) {
+    return join ', ', map { parse_sui_data_value( trim $_ ) } split m/,/, $1;
+  }
+  if ( $value =~ m/^"([^"]+)"$/ ) {
+    my $str = $1 =~ s{ \\x( [0-9A-Fa-f]{2} ) }{ chr hex $1 }egrx;
+    utf8::decode $str;
+    return $str;
+  }
+  if ( $value =~ m/^(\S+)$/ ) {
+    return $1;
   }
   die "Unknown value format: '$value'";
 }
