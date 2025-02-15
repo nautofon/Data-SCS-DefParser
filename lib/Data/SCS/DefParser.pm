@@ -1,43 +1,57 @@
 use v5.36;
+use Object::Pad 0.805;
 
-package ATS_DB::Parser;
+class Data::SCS::DefParser 0.09
+  :strict(params);
 
 use Archive::SCS 1.06;
 use Archive::SCS::GameDir;
+use Carp qw(croak);
 use Path::Tiny qw(path);
 use Feature::Compat::Try;
 use JSON::MaybeXS;
 use Gzip::Faster;
-use XXX;
-use Exporter qw(import);
-our @EXPORT = qw(ats_db);
 
 our $cargo = 0;
 our $positions = 1;
 our $tidy = 1;
 
 # The list of directories or archives to mount.
-our @def;
+field @def :reader(mounts);
 
 # The game name or game/sii directory to use if @def isn't specified.
-our $source = path(__FILE__)->absolute->parent->parent->parent->child('sii');
+field $mount :param;
 
-# The list of def file names to parse; def file names may also be
-# passed in as arguments to ats_db().
-our @filenames = (
+# The list of def file names to parse.
+field @filenames = (
   "def/country.sii",
   "def/city.sii",
   "def/company.sii",
-  #"def/map_data.sii",
-  #"def/sign/mileage_targets.sii",
-  "def/world/prefab.sii",
-  "def/world/prefab.baker.sii",
-  $cargo ? "def/cargo.sii" : (),
 );
 
-our $archive;
-our %archive_has_entry;
-our @company_files;
+field $archive;
+field %archive_has_entry;
+field @company_files;
+
+ADJUST :params ( :$parse = undef ) {
+  if (defined $parse) {
+    @filenames = ref $parse eq 'ARRAY' ? $parse->@* : $parse;
+    @filenames or croak '"parse" cannot be an empty array';
+  }
+  if (ref $mount eq 'ARRAY') {
+    @def = $mount->@*;
+    @def or croak '"mount" cannot be an empty array';
+  }
+  elsif ($mount isa Archive::SCS) {
+    $archive = $mount;
+  }
+  elsif (defined $mount) {
+    $self->init_def($mount);
+  }
+  else {
+    croak '"mount" cannot be undef';
+  }
+}
 
 
 sub trim :prototype($) {
@@ -48,8 +62,7 @@ sub trim :prototype($) {
 }
 
 
-sub find_file {
-  my $file = shift;
+method find_file ($file) {
   return $file if $archive_has_entry{ $file };
   warn "Couldn't find file '$file' in: @def";
   return;
@@ -63,8 +76,8 @@ sub parse_block {
 }
 
 
-sub include_file {
-  my $file = find_file shift;
+method include_file ($file) {
+  $file = $self->find_file($file);
   return unless $file;
   my $inc = $archive->read_entry($file);
   utf8::decode($inc);
@@ -73,8 +86,7 @@ sub include_file {
 }
 
 
-sub parse_sii {
-  my $file = shift;
+method parse_sii ($file) {
   my ($magic, $unit) = parse_block $archive->read_entry($file);
   utf8::decode($unit);
   die "Expected SiiNunit, found '$magic'" unless $magic eq 'SiiNunit';
@@ -83,7 +95,7 @@ sub parse_sii {
   while (my $line = shift @input) {
     if (my ($inc) = $line =~ m/^\@include\s+"([^"]+)"$/) {
       my $inc_path = path("/$file")->parent->relative("/")->child($inc);
-      unshift @input, include_file $inc_path;
+      unshift @input, $self->include_file($inc_path);
       next;
     }
     push @lines, $line;
@@ -252,9 +264,7 @@ sub ats_db_positions {
 }
 
 
-sub init_def {
-  return if @def;
-
+method init_def ($source) {
   my $is_path = $source isa Path::Tiny || $source =~ m|/|;
   if ( $is_path && path($source)->realpath->is_dir ) {
     @def = sort map { "$_" } path( $source )->children( qr/^def|^dlc_/ );
@@ -274,9 +284,7 @@ sub init_def {
 }
 
 
-sub ats_db_files {
-  return @_ if @_;
-
+method sii_files () {
   my @files = grep $archive_has_entry{$_}, @filenames;
   for my $def (@def) {
     # Include files from DLCs, with file names containing the DLC archive name.
@@ -287,20 +295,17 @@ sub ats_db_files {
 }
 
 
-# call this with a list of .sii files to read
-# (if the list is empty, defaults will be used)
-sub ats_db {
-  init_def;
-  my $ats_data = ats_db_base_data(@_);
-  ats_db_company_cargo($ats_data) if $cargo;
-  ats_db_company_city($ats_data);
+method data () {
+  my $ats_data = $self->raw_data;
+  $self->company_cargo($ats_data) if $cargo;
+  $self->company_city($ats_data);
   ats_db_company_filter($ats_data) if $tidy;
   ats_db_positions($ats_data) if $positions;
   return $ats_data;
 }
 
 
-sub ats_db_base_data {
+method raw_data () {
   if (@def) {
     $archive = Archive::SCS->new;
     $archive->mount($_) for @def;
@@ -309,9 +314,8 @@ sub ats_db_base_data {
   $archive_has_entry{$_} = 1 for my @archive_files = $archive->list_files;
   @company_files = grep { m|^/?def/company/| } @archive_files;
 
-  my @files = grep {defined} map {find_file $_} ats_db_files(@_);
   my @lines;
-  push @lines, parse_sii $_ for @files;
+  push @lines, $self->parse_sii($_) for $self->sii_files;
   my $ats_data = {};
   parse_sui_blocks $ats_data, @lines;
   add_wiki_names $ats_data;
@@ -319,21 +323,19 @@ sub ats_db_base_data {
 }
 
 
-sub ats_db_company_cargo {
-  my $ats_data = shift;
-  
+method company_cargo ($ats_data) {
   # read company in/out cargo data
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
     my (@in_files, @out_files);
     @in_files = grep { m|/$company/in/[^/]+\.sii$| } @company_files;
     my $in_data = {};
-    parse_sui_blocks $in_data, map { (parse_sii $_) } @in_files;
+    parse_sui_blocks $in_data, map { $self->parse_sii($_) } @in_files;
     my @in_cargo = map {
       $in_data->{_cargo_def}{$_}{cargo} =~ s/^cargo\.//r;
     } sort keys $in_data->{_cargo_def}->%*;
     @out_files = grep { m|/$company/out/[^/]+\.sii$| } @company_files;
     my $out_data = {};
-    parse_sui_blocks $out_data, map { (parse_sii $_) } @out_files;
+    parse_sui_blocks $out_data, map { $self->parse_sii($_) } @out_files;
     my @out_cargo = map {
       $out_data->{_cargo_def}{$_}{cargo} =~ s/^cargo\.//r;
     } sort keys $out_data->{_cargo_def}->%*;
@@ -345,15 +347,13 @@ sub ats_db_company_cargo {
 }
 
 
-sub ats_db_company_city {
-  my $ats_data = shift;
-  
+method company_city ($ats_data) {
   # relate city data and company data
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
     my @editor_files;
     @editor_files = grep { m|/$company/editor/[^/]+\.sii$| } @company_files;
     my @lines = ();
-    push @lines, parse_sii $_ for @editor_files;
+    push @lines, $self->parse_sii($_) for @editor_files;
     my $company_data = {};
     parse_sui_blocks $company_data, @lines;
     my @company_defs = map {
@@ -371,6 +371,7 @@ sub ats_db_company_filter {
   delete $ats_data->{company}{permanent}{mcs_con_sit};  # Mud Creek slide
   
   # remove prefab data, except for that of company depots
+  return unless $ats_data->{prefab} && $ats_data->{company}{permanent}->%*;
   my %prefabs;
   for my $company (sort keys $ats_data->{company}{permanent}->%*) {
     $prefabs{$_->{prefab}}++ for $ats_data->{company}{permanent}{$company}{company_def}->@*;
@@ -379,7 +380,7 @@ sub ats_db_company_filter {
   for my $prefab (sort keys $ats_data->{prefab}->%*) {
     delete $ats_data->{prefab}{$prefab} unless $prefabs{$prefab};
   }
-  prefab_json_cache $ats_data;
+  #prefab_json_cache $ats_data;
 }
 
 
