@@ -62,13 +62,6 @@ sub trim :prototype($) {
 }
 
 
-method find_file ($file) {
-  return $file if $archive_has_entry{ $file };
-  warn "Couldn't find file '$file' in: @def";
-  return;
-}
-
-
 sub parse_block {
   my $data = shift;
   my ($pre, $in) = $data =~ m/^([^\{]*)\{(.*)\}/s;
@@ -77,8 +70,10 @@ sub parse_block {
 
 
 method include_file ($file) {
-  $file = $self->find_file($file);
-  return unless $file;
+  if ( ! $archive_has_entry{ $file } ) {
+    warn "Couldn't find file '$file' in: @def";
+    return;
+  }
   my $inc = $archive->read_entry($file);
   utf8::decode($inc);
   my @inc = grep {$_} map {trim $_} split m/\n/, $inc;
@@ -328,10 +323,8 @@ method raw_data () {
   $archive_has_entry{$_} = 1 for my @archive_files = $archive->list_files;
   @company_files = grep { m|^/?def/company/| } @archive_files;
 
-  my @lines;
-  push @lines, $self->parse_sii($_) for $self->sii_files;
   my $ats_data = {};
-  parse_sui_blocks $ats_data, @lines;
+  parse_sui_blocks $ats_data, map { $self->parse_sii($_) } $self->sii_files;
   add_wiki_names $ats_data;
   return $ats_data;
 }
