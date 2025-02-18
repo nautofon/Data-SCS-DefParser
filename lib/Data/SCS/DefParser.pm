@@ -213,22 +213,6 @@ sub parse_sui_blocks {
 }
 
 
-my $wiki_names;
-sub add_wiki_names {
-  my $ats_data = shift;
-  for my $city (sort keys $ats_data->{city}->%*) {
-    my $wiki_name = $wiki_names->{city}{$city};
-    $wiki_name //= $ats_data->{city}{$city}{city_name};
-    $ats_data->{city}{$city}{wiki_name} = $wiki_name;
-  }
-  for my $company (sort keys $ats_data->{company}{permanent}->%*) {
-    my $company_name = $ats_data->{company}{permanent}{$company}{name};
-    my $wiki_name = $wiki_names->{company}{$company_name} // $company_name;
-    $ats_data->{company}{permanent}{$company}{wiki_name} = $wiki_name;
-  }
-}
-
-
 method init_def ($source) {
   my $is_path = $source isa Path::Tiny || $source =~ m|/|;
   if ( $is_path && path($source)->realpath->is_dir ) {
@@ -294,7 +278,6 @@ method raw_data () {
 
   my $ats_data = {};
   parse_sui_blocks $ats_data, map { $self->parse_sii($_) } $self->sii_files;
-  add_wiki_names $ats_data;
   return $ats_data;
 }
 
@@ -357,56 +340,6 @@ sub ats_db_company_filter {
     delete $ats_data->{prefab}{$prefab} unless $prefabs{$prefab};
   }
 }
-
-
-# Legacy wiki_name adjustments
-$wiki_names = {
-  city => {  # token => fandom page name
-    aberdeen_wa  => 'Aberdeen (Washington)',
-    carlsbad     => 'Carlsbad (California)',
-    carlsbad_nm  => 'Carlsbad (New Mexico)',
-    glasgow_mt   => 'Glasgow (Montana)',
-    longview_tx  => 'Longview (Texas)',
-    longview     => 'Longview (Washington)',
-    pajarito     => 'Santa Rosa',
-    pedro        => 'Deming',
-    sidney       => 'Sidney (Montana)',
-    sidney_ne    => 'Sidney (Nebraska)',
-    salina_ks    => 'Salina (Kansas)',
-  },
-  company => {  # name => fandom page name
-    '18 Wheels' => '18 Wheels Garage',
-    'Airport Dallas Fort Worth' => 'Dallas-Fort Worth Airport',
-    'Airport Denver' => 'Denver Air Cargo',
-    'Azure' => 'Azure Glasswork',
-    'Chemso Ltd.' => 'Chemso',
-    'Coastline mining' => 'Coastline Mining',
-    'Drake Cars' => 'Drake Car Dealer',
-    'Elimax' => 'EliMax',
-    'Equos Power Transport' => 'Equos Power',
-    'Fish Tail Food' => 'Fish Tail Foods',
-    'GARC' => 'GARC Railroads',
-    'GF Cargo' => 'Great Falls Cargo Terminal',
-    'GreenPetrol' => 'Green Petrol',
-    'Intercontinental Airport Houston' => 'Houston Intercontinental Airport',  # 1.46 only
-    'Houston Intercont. Airport' => 'Houston Intercontinental Airport',
-    'Johnson and Smith‎' => 'Johnson & Smith‎',
-    'Lonestar Forwarding' => 'Lone Star Forwarding',
-    'Lumen auto' => 'Lumen Auto',
-    'Mud Creek slide' => 'Mud Creek Slide',
-    'Port of SF' => 'Port of San Francisco',
-    'SellGoods' => 'Sell Goods',
-    'Sweetbeets' => 'Sweet Beets',
-    'Space Center' => 'Space Park Houston',  # 1.46 only
-    'Space Park' => 'Space Park Houston',
-    'Taylor Construction Group' => 'Taylor',
-    'Tera' => 'TERA',
-    'US Beverages & Bottling' => 'USBB',
-    'Voltison' => 'Voltison Motors',
-    'Waldens' => "Walden's",
-    'Western Star' => 'Western Star Trucks',
-  },
-};
 
 
 1;
