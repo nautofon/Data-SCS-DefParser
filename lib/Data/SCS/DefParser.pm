@@ -8,12 +8,8 @@ use Archive::SCS 1.06;
 use Archive::SCS::GameDir;
 use Carp qw(croak);
 use Path::Tiny qw(path);
-use Feature::Compat::Try;
-use JSON::MaybeXS;
-use Gzip::Faster;
 
 our $cargo = 0;
-our $positions = 1;
 our $tidy = 1;
 
 # The list of directories or archives to mount.
@@ -217,20 +213,6 @@ sub parse_sui_blocks {
 }
 
 
-sub prefab_json_cache {
-  my $ats_data = shift;
-  my $cache_dir = path(__FILE__)->absolute->parent->parent->parent->child('data')->child('cache');
-  $cache_dir->mkpath;
-  my $cache_file = $cache_dir->child('prefab.json.gz');
-  if ($cache_file->is_file) {  # read cache
-    $ats_data->{prefab} = decode_json gunzip $cache_file->slurp;
-  }
-  elsif (! $cache_file->exists) {  # write cache
-    $cache_file->spew( gzip encode_json $ats_data->{prefab} );
-  }
-}
-
-
 my $wiki_names;
 sub add_wiki_names {
   my $ats_data = shift;
@@ -243,30 +225,6 @@ sub add_wiki_names {
     my $company_name = $ats_data->{company}{permanent}{$company}{name};
     my $wiki_name = $wiki_names->{company}{$company_name} // $company_name;
     $ats_data->{company}{permanent}{$company}{wiki_name} = $wiki_name;
-  }
-}
-
-
-sub ats_db_positions {
-  my $ats_data = shift;
-  my $pos_dir = path(__FILE__)->absolute->parent->parent->parent->child('pos');
-  $pos_dir->is_dir or return;
-  my @files = grep { $_->basename =~ /\.txt$/ } $pos_dir->children;
-  my (@pos, %pos);
-  push @pos, split /\r?\n/, $_->slurp for @files;
-  for my $line (grep {$_} map {trim $_} @pos) {
-    $line =~ /^ *([^;]*) +;[^;]* \(sec([-+][0-9]+)([-+][0-9]+)\);([^;]*);([^;]*);([^;]*);([^;]*);([^;]*)$/
-      or next;
-    $pos{$1} = {
-      sx => $2, sy => $3,
-      cx => $4, cz => $5, cy => $6,
-      ca => $7, cb => $8,
-    };
-  }
-  for my $city (sort keys $ats_data->{city}->%*) {
-    $pos{$city} or next;
-    $ats_data->{city}{$city}{_east} = $pos{$city}{cx};
-    $ats_data->{city}{$city}{_north} = $pos{$city}{cy};
   }
 }
 
@@ -321,7 +279,6 @@ method data () {
   $self->company_cargo($ats_data) if $cargo;
   $self->company_city($ats_data);
   ats_db_company_filter($ats_data) if $tidy;
-  ats_db_positions($ats_data) if $positions;
   return $ats_data;
 }
 
@@ -399,7 +356,6 @@ sub ats_db_company_filter {
   for my $prefab (sort keys $ats_data->{prefab}->%*) {
     delete $ats_data->{prefab}{$prefab} unless $prefabs{$prefab};
   }
-  #prefab_json_cache $ats_data;
 }
 
 
