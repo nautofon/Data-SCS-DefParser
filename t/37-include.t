@@ -11,13 +11,10 @@ my $data = CLASS->new(
 is $data->{foo}{attr}, 'ok', 'include attribute, file name txt';
 is $data->{bar}{unit}, 'ok', 'include unit block, file name sui';
 
-{ my $todo = todo 'croak by default for an include that does not exist';
-local $SIG{'__WARN__'} = sub {};
 ok dies { CLASS->new(
   mount => ['t/fixtures/include'],
   parse => 'missing.sii',
 )->raw_data }, 'include file does not exist';
-}
 
 ok dies { CLASS->new(
   mount => ['t/fixtures/include'],

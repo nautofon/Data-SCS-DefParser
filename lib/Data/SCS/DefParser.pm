@@ -66,10 +66,8 @@ sub parse_block {
 
 
 method include_file ($file) {
-  if ( ! $archive_has_entry{ $file } ) {
-    warn "Couldn't find file '$file' in: @def";
-    return;
-  }
+  $archive_has_entry{$file} or croak
+    sprintf "Couldn't find file '%s' in: %s", $file, join ", ", @def;
   my $inc = $archive->read_entry($file);
   utf8::decode($inc);
   my @inc = grep {$_} map {trim $_} split m/\n/, $inc;
