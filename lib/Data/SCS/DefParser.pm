@@ -8,6 +8,7 @@ use Archive::SCS 1.06;
 use Archive::SCS::GameDir;
 use Carp qw(croak);
 use Path::Tiny qw(path);
+use Scalar::Util ();
 
 our $cargo = 0;
 our $tidy = 1;
@@ -123,6 +124,18 @@ sub parse_sui_data_value {
     my $str = $1 =~ s{ \\x( [0-9A-Fa-f]{2} ) }{ chr hex $1 }egrx;
     utf8::decode $str;
     return $str;
+  }
+  if ( $value =~ m/^0x( [0-9A-Fa-f]{6,8} )$/x ) {
+    return $1;
+  }
+  if ( $value eq 'true' ) {
+    return builtin::true;
+  }
+  if ( $value eq 'false' ) {
+    return builtin::false;
+  }
+  if ( Scalar::Util::looks_like_number $value ) {
+    return 0 + $value;
   }
   if ( $value =~ m/^(\S+)$/ ) {
     return $1;

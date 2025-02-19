@@ -12,16 +12,12 @@ my $values = CLASS->new(
 is $values->{types}{string}, 'String value', 'string';
 
 is $values->{types}{float_f}, 1.23, 'float, decimal notation';
-{ my $todo = todo 'created_as_number unimplemented';
 is $values->{types}{float_e}, -.62e+4, 'float, scientific notation';
-}
 is $values->{types}{float_b}, 1, 'float, binary32 notation';
 
-{ my $todo = todo 'float2/3/4 unimplemented';
 is $values->{types}{float2}, '1, 2.4', 'float2';
 is $values->{types}{float3}, '1, 0.54, 3.875', 'float3';
 is $values->{types}{float4}, '1, 5.4, 3, 9', 'float4';
-}
 
 is $values->{types}{fixed}, 10, 'fixed';
 is $values->{types}{signed}, -15, 'signed';
@@ -30,19 +26,15 @@ is $values->{types}{fixed2}, '20, 69', 'fixed2';
 is $values->{types}{fixed3}, '10, 22, 33', 'fixed3';
 is $values->{types}{fixed4}, '10, 22, 33, 44', 'fixed4';
 
-{ my $todo = todo 'bool unimplemented';
 is $values->{types}{true}, builtin::true, 'true';
 is $values->{types}{false}, builtin::false, 'false';
-}
 
 is $values->{types}{token}, 'value', 'token';
 is $values->{types}{owner_ptr}, '.some.nameless.unit', 'owner pointer';
 is $values->{types}{link_ptr}, 'some.named.unit', 'link pointer';
 is $values->{types}{resource_tie}, 'path/to/some/resource.pma', 'resource tie';
 
-{ my $todo = todo 'hex unimplemented';
 is $values->{types}{hex}, '685FAF', 'hex';
-}
 
 like dies { CLASS->new(
   mount => ['t/fixtures/types'],
