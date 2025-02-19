@@ -91,6 +91,7 @@ method parse_sii ($file) {
     push @lines, $line;
   }
   @lines = map {trim $_} map {
+    s{/\* .*? \*/}{}gx;
     m{/\*|\*/} and die "Multi-line comments unimplemented";
     # clip comments
     s{#.*$|//.*$}{}r;
