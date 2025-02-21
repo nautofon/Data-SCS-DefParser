@@ -1,0 +1,41 @@
+---
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  dist:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        perl:
+          - '5.40'
+          - '5.38'
+          - '5.36'
+      fail-fast: false
+    env:
+      AUTHOR_TESTING: 1
+      AUTOMATED_TESTING: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+          install-modules-with: cpanm
+          install-modules-args: --skip-satisfied --with-configure
+          enable-modules-cache: true
+      - name: make
+        run: |
+          perl Makefile.PL
+          make manifest
+          make dist
+          make
+      - name: test
+        run: |
+          make test
+      - name: dist test
+        run: |
+          cpanm -v Data-SCS-DefParser-*.tar.gz
