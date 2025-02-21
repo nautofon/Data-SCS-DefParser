@@ -1,0 +1,13 @@
+/MANIFEST
+/MANIFEST.bak
+/Makefile
+/Makefile.old
+
+/blib/*
+/pm_to_blib
+/cover_db/*
+/local/*
+*.gz
+/Data-SCS[-.]*
+
+/data/
