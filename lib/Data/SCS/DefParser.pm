@@ -14,9 +14,10 @@ our $cargo = 0;
 our $tidy = 1;
 
 # The list of directories or archives to mount.
-field @def :reader(mounts);
+field @mounts :reader;
 
-# The game name or game/sii directory to use if @def isn't specified.
+# The data source to use (game name, game/sii directory, array reference
+# of mountable paths, Archive::SCS instance).
 field $mount :param;
 
 # The list of def file names to parse.
@@ -36,8 +37,8 @@ ADJUST :params ( :$parse = undef ) {
     @filenames or croak '"parse" cannot be an empty array';
   }
   if (ref $mount eq 'ARRAY') {
-    @def = $mount->@*;
-    @def or croak '"mount" cannot be an empty array';
+    @mounts = $mount->@*;
+    @mounts or croak '"mount" cannot be an empty array';
   }
   elsif ($mount isa Archive::SCS) {
     $archive = $mount;
@@ -68,7 +69,7 @@ sub parse_block {
 
 method include_file ($file) {
   $archive_has_entry{$file} or croak
-    sprintf "Couldn't find file '%s' in: %s", $file, join ", ", @def;
+    sprintf "Couldn't find file '%s' in: %s", $file, join ", ", @mounts;
   my $inc = $archive->read_entry($file);
   utf8::decode($inc);
   my @inc = grep {$_} map {trim $_} split m/\n/, $inc;
@@ -228,42 +229,42 @@ sub parse_sui_blocks {
 method init_def ($source) {
   my $is_path = $source isa Path::Tiny || $source =~ m|/|;
   if ( $is_path && path($source)->realpath->is_dir ) {
-    @def = sort map { "$_" } path( $source )->children( qr/^def|^dlc_/ );
+    @mounts = sort map { "$_" } path( $source )->children( qr/^def|^dlc_/ );
 
     # ATS_DB originally expected def.scs to be extracted directly into the
     # source dir. In this legacy case, the source dir must be mounted first.
     my $def_dir = "$source/def";
     if ( path($def_dir)->is_dir && ! path($def_dir)->child('def')->is_dir ) {
-      @def = ( $source, grep { $_ ne $def_dir } @def );
+      @mounts = ( $source, grep { $_ ne $def_dir } @mounts );
     }
   }
   else {  # $source is abstract, e.g. 'ATS'
     my $gamedir = Archive::SCS::GameDir->new(game => $source);
-    @def = grep { /^def|^dlc_/ } $gamedir->archives;
+    @mounts = grep { /^def|^dlc_/ } $gamedir->archives;
 
     if ( $gamedir->game =~ m/^A/i ) {
       # The DLC file names for ATS are well-known; limiting the mounts
       # to just the needed ones saves a bunch of time.
-      @def = sort +(
+      @mounts = sort +(
         'dlc_kenworth_t680.scs',
         'dlc_peterbilt_579.scs',
         'dlc_westernstar_49x.scs',
         'dlc_arizona.scs',
         'dlc_nevada.scs',
-        grep { /^def|^dlc_[a-z]{2}\.scs$/ } @def,
+        grep { /^def|^dlc_[a-z]{2}\.scs$/ } @mounts,
       );
     }
 
-    @def = map { $gamedir->path->child($_)->stringify } @def;
+    @mounts = map { $gamedir->path->child($_)->stringify } @mounts;
   }
 }
 
 
 method sii_files () {
   my @files = grep $archive_has_entry{$_}, @filenames;
-  for my $def (@def) {
+  for my $path (@mounts) {
     # Include files from DLCs, with file names containing the DLC archive name.
-    my $dlc_name = path($def)->basename =~ s/\.scs$//r;
+    my $dlc_name = path($path)->basename =~ s/\.scs$//r;
     push @files, grep $archive_has_entry{$_}, map { s/\.sii$/.$dlc_name.sii/r } @filenames;
   }
   return sort @files;
@@ -280,9 +281,9 @@ method data () {
 
 
 method raw_data () {
-  if (@def) {
+  if (@mounts) {
     $archive = Archive::SCS->new;
-    $archive->mount($_) for @def;
+    $archive->mount($_) for @mounts;
   }
   undef %archive_has_entry;
   $archive_has_entry{$_} = 1 for my @archive_files = $archive->list_files;
