@@ -130,9 +130,11 @@ sub parse_sui_data_value {
     return $1;
   }
   if ( $value eq 'true' ) {
+    no warnings 'experimental::builtin';
     return builtin::true;
   }
   if ( $value eq 'false' ) {
+    no warnings 'experimental::builtin';
     return builtin::false;
   }
   if ( Scalar::Util::looks_like_number $value ) {

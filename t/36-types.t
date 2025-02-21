@@ -26,6 +26,7 @@ is $values->{types}{fixed2}, '20, 69', 'fixed2';
 is $values->{types}{fixed3}, '10, 22, 33', 'fixed3';
 is $values->{types}{fixed4}, '10, 22, 33, 44', 'fixed4';
 
+no warnings 'experimental::builtin';
 is $values->{types}{true}, builtin::true, 'true';
 is $values->{types}{false}, builtin::false, 'false';
 
