@@ -39,7 +39,7 @@ YAML::Tiny->new( $ats )->write( 'ats.yml' );
 # Example: List city tokens from the Texas DLC; the correct
 # def name city.dlc_tx.sii will be automatically determined.
 say for ( sort keys Data::SCS::DefParser->new(
-  mount => ['def_tx.scs'],
+  mount => ['dlc_tx.scs'],
   parse => ['def/city.sii'],
 )->data->{city}->%* );
 ```

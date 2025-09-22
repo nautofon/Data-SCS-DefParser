@@ -340,10 +340,10 @@ method company_city ($ats_data) {
 
 sub ats_db_company_filter {
   my $ats_data = shift;
-  
+
   # fix data errors (leftovers from earlier versions etc.)
   delete $ats_data->{company}{permanent}{mcs_con_sit};  # Mud Creek slide
-  
+
   # remove prefab data, except for that of company depots
   return unless $ats_data->{prefab} && $ats_data->{company}{permanent}->%*;
   my %prefabs;

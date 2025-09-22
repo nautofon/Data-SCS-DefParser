@@ -2,6 +2,7 @@
 
 use lib 'lib';
 use Test2::V0 -target => 'Data::SCS::DefParser';
+no warnings 'experimental::builtin';
 
 my $data = CLASS->new(
   mount => ['t/fixtures/class-prefab'],
@@ -21,9 +22,6 @@ is $d_road_wrk2c->{prefab_desc}, '/prefab/roadwork/tx_roadwork_clear_01.ppd', 'd
 
 my $us_gas_06 = $data->{prefab}{us_gas_06};
 is $us_gas_06->{prefab_desc}, '/prefab/gas/nm_gas_station1_depot.ppd', 'us_gas_06 prefab_desc';
-{ my $todo = todo 'bool unimplemented';
-no warnings 'experimental::builtin';
 is $us_gas_06->{slow_time}, builtin::true, 'us_gas_06 slow_time';
-}
 
 done_testing;
