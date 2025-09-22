@@ -1,7 +1,7 @@
 use v5.36;
 use Object::Pad 0.805;
 
-class Data::SCS::DefParser 0.09
+class Data::SCS::DefParser 0.10
   :strict(params);
 
 use Archive::SCS 1.06;

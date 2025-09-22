@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker::CPANfile;
 my %provides = (
   'Data::SCS::DefParser' => {
     file => 'lib/Data/SCS/DefParser.pm',
-    version => '0.09',
+    version => '0.10',
   },
 );
 
@@ -20,7 +20,7 @@ WriteMakefile(
       version => 2,
     },
     'provides' => \%provides,
-    'release_status' => 'unstable',
+    'release_status' => 'stable',
     'resources' => {
       repository => {
         type => 'git',
