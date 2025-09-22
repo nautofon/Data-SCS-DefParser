@@ -50,7 +50,7 @@ Using [cpanminus](https://metacpan.org/pod/App::cpanminus)
 on Perl v5.36 or later:
 
 ```sh
-cpanm https://github.com/nautofon/Data-SCS-DefParser.git
+cpanm Data::SCS::DefParser
 ```
 
 Performing a manual installation should be considered slightly
