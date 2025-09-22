@@ -246,15 +246,24 @@ method init_def ($source) {
 
     if ( $gamedir->game =~ m/^A/i ) {
       # The DLC file names for ATS are well-known; limiting the mounts
-      # to just the needed ones saves a bunch of time.
-      @mounts = sort +(
+      # to essentially the ones suggested by country.sii saves a bunch of time.
+      # Using only the DLC file list for this would be unreliable unless you
+      # always run the latest game version and always get all DLC immediately.
+      my %countries = Data::SCS::DefParser->new(
+        mount => $gamedir->mounted('def.scs'),
+        parse => 'def/country.sii',
+      )->raw_data->{country}{data}->%*;
+      my %mount;
+      $mount{$_}++ for (
+        'def.scs',
         'dlc_kenworth_t680.scs',
         'dlc_peterbilt_579.scs',
         'dlc_westernstar_49x.scs',
         'dlc_arizona.scs',
         'dlc_nevada.scs',
-        grep { /^def|^dlc_[a-z]{2}\.scs$/ } @mounts,
+        map { lc sprintf 'dlc_%s.scs', $countries{$_}{country_code} } keys %countries,
       );
+      @mounts = grep { $mount{$_} } $gamedir->archives;
     }
 
     @mounts = map { $gamedir->path->child($_)->stringify } @mounts;
