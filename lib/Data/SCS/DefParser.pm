@@ -366,4 +366,27 @@ sub ats_db_company_filter {
 }
 
 
+method all_locations ($companies = {}, $data = $self->data) {
+  # get a list of every company location as an array of hashrefs
+  # (allows for very simple filtering code)
+  my %branch_company;
+  for my $company (keys $companies->%*) {
+    for my $branch ($companies->{$company}{branches}->@*) {
+      $branch_company{$branch} = $company;
+    }
+  }
+  my @locs;
+  for my $branch (sort keys $data->{company}{permanent}->%*) {
+    push @locs, map {
+      branch  => $branch,
+      company => $branch_company{$branch},
+      country => lc $data->{city}{ lc $_->{city} }{country},
+      city    => lc $_->{city},
+      prefab  => lc $_->{prefab},
+    }, $data->{company}{permanent}{$branch}{company_def}->@*;
+  }
+  return sort { $a->{city} cmp $b->{city} } @locs;
+}
+
+
 1;
