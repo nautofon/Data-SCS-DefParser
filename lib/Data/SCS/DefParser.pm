@@ -261,7 +261,7 @@ method init_def ($source) {
         'dlc_westernstar_49x.scs',
         'dlc_arizona.scs',
         'dlc_nevada.scs',
-        map { lc sprintf 'dlc_%s.scs', $countries{$_}{country_code} } keys %countries,
+        map { lc sprintf 'dlc_%s.scs', $_->{country_code} } values %countries,
       );
       @mounts = grep { $mount{$_} } $gamedir->archives;
     }
