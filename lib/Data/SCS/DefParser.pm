@@ -307,7 +307,7 @@ method raw_data () {
   @company_files = grep { m|^/?def/company/| } @archive_files;
 
   my $ats_data = {};
-  parse_sui_blocks $ats_data, map { $self->parse_sii($_) } $self->sii_files;
+  parse_sui_blocks $ats_data, $self->parse_sii($_) for $self->sii_files;
   return $ats_data;
 }
 
