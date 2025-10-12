@@ -67,13 +67,27 @@ sub parse_block {
 }
 
 
-method include_file ($file) {
-  $archive_has_entry{$file} or croak
-    sprintf "Couldn't find file '%s' in: %s", $file, join ", ", @mounts;
-  my $inc = $archive->read_entry($file);
-  utf8::decode($inc);
-  my @inc = grep {$_} map {trim $_} split m/\n/, $inc;
-  return @inc;
+method lines_from_file ($context, $contents) {
+  my @input = grep {length $_} map {trim $_} split m/\n/, $contents;
+  my @lines;
+  while (my $line = shift @input) {
+    if (my ($inc) = $line =~ m/\A\@include\s+"(.+?)"\z/) {
+      # include file
+      my $file = path("/$context")->parent->relative("/")->child($inc);
+      $file = substr $inc, 1 if $inc =~ m|\A/|;
+      if (! $archive_has_entry{$file}) {
+        $archive_has_entry{$file} = eval { $archive->read_entry($file); 1 };
+        $archive_has_entry{$file} or croak
+          sprintf "Couldn't find file '%s' (referenced by '%s') in: %s",
+          $file, $context, join ", ", @mounts;
+      }
+      utf8::decode my $entry = $archive->read_entry($file);
+      unshift @input, $self->lines_from_file($file, $entry);
+      next;
+    }
+    push @lines, $line;
+  }
+  return @lines;
 }
 
 
@@ -82,16 +96,7 @@ method parse_sii ($file) {
   my ($magic, $unit) = parse_block $sii;
   $magic =~ m/^ \N{ BYTE ORDER MARK }? SiiNunit $/x or die
     sprintf "Expected SiiNunit, found '%s' in %s", $magic, $file;
-  my @input = grep {$_} map {trim $_} split m/\n/, $unit;
-  my @lines;
-  while (my $line = shift @input) {
-    if (my ($inc) = $line =~ m/^\@include\s+"([^"]+)"$/) {
-      my $inc_path = path("/$file")->parent->relative("/")->child($inc);
-      unshift @input, $self->include_file($inc_path);
-      next;
-    }
-    push @lines, $line;
-  }
+  my @lines = $self->lines_from_file($file, $unit);
   @lines = map {trim $_} map {
     s{/\* .*? \*/}{}gx;
     m{/\*|\*/} and die "Multi-line comments unimplemented";
