@@ -101,7 +101,7 @@ method parse_sii ($file) {
   @lines = grep {$_} map {trim $_} map {
     # make sure { and } stand by their own on a line
     my @line = ($_);
-    while ($line[$#line] =~ m/^([^\{]+)([\{\}])(.*)/) {
+    while ($line[$#line] =~ m/^(.*?)([\{\}])(.*)/) {
       pop @line;
       push @line, $1, $2, $3;
     }
