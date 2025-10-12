@@ -121,8 +121,9 @@ sub parse_sui_data_value {
   if ( $value =~ m/^\(([^()]+)\)$/ ) {
     return join ', ', map { parse_sui_data_value( trim $_ ) } split m/,/, $1;
   }
-  if ( $value =~ m/^"([^"]+)"$/ ) {
+  if ( $value =~ m/^"( ([^"]|\\")+ )"$/x ) {
     my $str = $1 =~ s{ \\x( [0-9A-Fa-f]{2} ) }{ chr hex $1 }egrx;
+    $str =~ s{\\"}{"}g;
     utf8::decode $str;
     return $str;
   }
