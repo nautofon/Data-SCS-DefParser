@@ -44,6 +44,9 @@ for my $branch ( sort keys $data->{company}{permanent}->%* ) {
   $companies{$company}{name} = $data->{company}{permanent}{$branch}{name};
 }
 
+# A reference to the %companies hash can be used as input to the parser's
+# all_locations() method. See examples/all_locations.pl.
+
 
 # Output result
 
