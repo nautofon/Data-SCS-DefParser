@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         perl:
+          - '5.44'
+          - '5.42'
           - '5.40'
           - '5.38'
           - '5.36'
@@ -20,7 +22,7 @@ jobs:
       AUTHOR_TESTING: 1
       AUTOMATED_TESTING: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
